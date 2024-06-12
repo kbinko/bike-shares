@@ -159,7 +159,7 @@ day_of_week2["avg_dur_minute"] = avg_duration
 # visualizing the total duration of rides per day of the week
 plt.figure(figsize=(18, 8), dpi=120)
 plt.style.use("fivethirtyeight")
-ax = day_of_week2.plot.barh(y="tot_dur_hour", legend=False, cmap="viridis")
+ax = day_of_week2.plot.barh(y="tot_dur_minute", legend=False, cmap="viridis")
 plt.title("Total duration of rides per weekday")
 plt.ylabel("Day")
 plt.xlabel("Minutes")
@@ -289,4 +289,84 @@ plt.xticks(rotation=90)
 plt.grid(True)
 plt.tight_layout()
 plt.savefig("../../reports/figures/rides_per_minute_duration_combined.png")
+plt.show()
+
+# Creating a new dataframe for the seasons
+seasons_df = y2018.copy()
+
+seasons_df = seasons_df.drop(
+    columns=[
+        "Duration",
+        "Start station number",
+        "End date",
+        "Start station",
+        "End station number",
+        "End station",
+        "Bike number",
+        "Day of the week",
+        "hour",
+    ]
+)
+# Extracting info from the start date
+seasons_df["date"] = seasons_df["Start date"].dt.date
+seasons_df["hour"] = seasons_df["Start date"].dt.hour
+seasons_df["month"] = seasons_df["Start date"].dt.month
+
+# Adding the season column
+seasons_df["season"] = pd.cut(
+    seasons_df["month"],
+    bins=[0, 2, 5, 8, 11, 12],
+    labels=["Winter", "Spring", "Summer", "Fall", "Winter"],
+    right=True,
+    include_lowest=True,
+    ordered=False,
+)
+
+# Visualizing the number of rides per season
+seasons = seasons_df["season"].value_counts()
+plt.figure(figsize=(18, 8), dpi=120)
+plt.style.use("fivethirtyeight")
+seasons.plot.bar()
+plt.title("Number of rides per season")
+plt.ylabel("Number of rides")
+plt.xlabel("Season")
+plt.tight_layout()
+plt.savefig("../../reports/figures/rides_per_season.png", dpi=120)
+plt.show()
+
+# Creating a new dataframe for the number of rides per season and hour
+season_hour = seasons_df.groupby(["hour", "season"]).size()
+season_hour = season_hour.reset_index()
+season_hour.columns = ["time", "season", "count"]
+
+# Visualizing the number of rides per season and hour
+sns.set_theme(rc={"figure.figsize": (14, 10)})
+sns.set_context("paper", font_scale=1.2, rc={"lines.linewidth": 1.7})
+sns.set_style("darkgrid")
+
+# Create the point plot
+ax = sns.pointplot(
+    data=season_hour, x="time", y="count", hue="season", palette="viridis"
+)
+
+# Customize the legend
+ax.legend(
+    title="Season",
+    title_fontsize="large",
+    fontsize="large",
+    loc="upper right",
+    shadow=True,
+    fancybox=True,
+    frameon=True,
+)
+
+# Customize grid lines
+ax.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
+
+# Add titles and labels
+plt.title("Season-wise Hourly Distribution of Bike Rentals", fontsize="xx-large")
+plt.ylabel("Count of Rides", fontsize="x-large")
+plt.xlabel("Hour of the Day", fontsize="x-large")
+plt.tight_layout()
+plt.savefig("../../reports/figures/rides_per_season_hour.png", dpi=120)
 plt.show()
