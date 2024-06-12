@@ -97,8 +97,8 @@ plt.savefig("../../reports/figures/top_start_stations.png", dpi=120)
 plt.show()
 
 # converting the start and end time to datetime
-y2018["Start date"] = pd.to_datetime(y2018["Start date"], errors="ignore")
-y2018["End date"] = pd.to_datetime(y2018["End date"], errors="ignore")
+y2018["Start date"] = pd.to_datetime(y2018["Start date"])
+y2018["End date"] = pd.to_datetime(y2018["End date"])
 y2018.dtypes
 
 # Creating new columns for the day of the week
@@ -158,8 +158,8 @@ day_of_week2["avg_dur_minute"] = avg_duration
 
 # visualizing the total duration of rides per day of the week
 plt.figure(figsize=(18, 8), dpi=120)
-ax = day_of_week2.plot.barh(y="tot_dur_minute", legend=False)
-plt.style.use("seaborn-v0_8-poster")
+plt.style.use("fivethirtyeight")
+ax = day_of_week2.plot.barh(y="tot_dur_hour", legend=False, cmap="viridis")
 plt.title("Total duration of rides per weekday")
 plt.ylabel("Day")
 plt.xlabel("Minutes")
@@ -171,10 +171,7 @@ plt.show()
 # visualizing the average duration of rides per day of the week
 plt.figure(figsize=(18, 8), dpi=120)
 plt.style.use("fivethirtyeight")
-# Plot with the current color map
-ax = day_of_week2.plot.barh(
-    y="avg_dur_minute", legend=False, cmap="viridis", edgecolor="grey"
-)
+ax = day_of_week2.plot.barh(y="avg_dur_minute", legend=False, cmap="viridis")
 plt.title(f"Average Duration of Rides per Weekday", fontsize=20)
 plt.ylabel("Day", fontsize=15)
 plt.xlabel("Minutes", fontsize=15)
@@ -189,4 +186,107 @@ for index, value in enumerate(day_of_week2["avg_dur_minute"]):
     )
 plt.tight_layout()
 plt.savefig(f"../../reports/figures/average_duration_per_day.png", dpi=120)
+plt.show()
+
+# Average duration of rides per starting hour
+y2018["hour"] = y2018["Start date"].dt.hour
+by_hour = y2018.groupby("hour")["Duration"].mean() / 60
+
+# Total rides count per starting hour
+ride_count_hour = y2018["hour"].value_counts().sort_index()
+
+# Merge the two dataframes
+hourly = pd.concat([by_hour, ride_count_hour], axis=1)
+
+# Visualizing the total duration of rides per starting hour
+plt.figure(figsize=(18, 8), dpi=120)
+plt.style.use("fivethirtyeight")
+ax = hourly.plot.bar(y="count", legend=False, cmap="viridis")
+plt.title("Total rides per starting hour")
+plt.ylabel("Count of rides")
+plt.xlabel("Hour")
+plt.tight_layout()
+plt.savefig("../../reports/figures/total_rides_per_hour.png", dpi=120)
+plt.show()
+
+# Visualizing the average duration of rides per starting hour
+plt.figure(figsize=(18, 8), dpi=120)
+plt.style.use("fivethirtyeight")
+ax = hourly.plot.bar(y="Duration", legend=False, cmap="viridis")
+plt.title("Average rides duration per starting hour")
+plt.ylabel("Count of rides")
+plt.xlabel("Hour")
+plt.tight_layout()
+plt.savefig("../../reports/figures/total_rides_per_hour.png", dpi=120)
+plt.show()
+
+# Creating df representing Count of rides per minute duration
+duration = y2018["Duration"] // 60
+duration = duration[duration < 121].value_counts().sort_index()
+duration = duration.reset_index()
+duration.columns = ["Minute", "Count"]
+duration_60 = duration[duration["Minute"] <= 60]
+duration_120 = duration[duration["Minute"] > 60]
+
+# Plot for durations up to 60 minutes
+plt.figure(figsize=(18, 8), dpi=120)
+plt.style.use("fivethirtyeight")
+plt.bar(duration_60["Minute"], duration_60["Count"], color="blue")
+plt.title("Count of rides per minute duration (0-60 minutes)")
+plt.ylabel("Count of rides")
+plt.xlabel("Duration in minutes")
+plt.xticks(rotation=90)
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("../../reports/figures/rides_per_minute_duration_60.png", dpi=120)
+plt.show()
+
+# Plot for durations up to 120 minutes
+plt.figure(figsize=(18, 8), dpi=120)
+plt.style.use("fivethirtyeight")
+plt.bar(duration_120["Minute"], duration_120["Count"], color="green")
+plt.title("Count of rides per minute duration (0-120 minutes)")
+plt.ylabel("Count of rides")
+plt.xlabel("Duration in minutes")
+plt.xticks(rotation=90)
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("../../reports/figures/rides_per_minute_duration_120.png", dpi=120)
+plt.show()
+
+# Combined plot with subplots
+fig, axes = plt.subplots(1, 2, figsize=(18, 8), dpi=120)
+plt.style.use("fivethirtyeight")
+
+# First subplot for the first hour
+axes[0].bar(duration_60["Minute"], duration_60["Count"], color="blue")
+axes[0].set_title("Count of rides per minute duration (0-60 minutes)")
+axes[0].set_xlabel("Duration in minutes")
+axes[0].set_ylabel("Count of rides")
+axes[0].grid(True)
+axes[0].tick_params(axis="x", rotation=90)
+
+# Second subplot for the second hour
+axes[1].bar(duration_120["Minute"], duration_120["Count"], color="green")
+axes[1].set_title("Count of rides per minute duration (0-120 minutes)")
+axes[1].set_xlabel("Duration in minutes")
+axes[1].set_ylabel("Count of rides")
+axes[1].grid(True)
+axes[1].tick_params(axis="x", rotation=90)
+plt.tight_layout()
+plt.savefig("../../reports/figures/combined_rides_per_minute_duration.png", dpi=120)
+plt.show()
+
+
+# One plot showing whole 2h span
+plt.figure(figsize=(18, 8), dpi=120)
+plt.style.use("fivethirtyeight")
+plt.bar(duration["Minute"], duration["Count"], color="royalblue")
+plt.title("Count of rides per minute duration")
+plt.ylabel("Count of rides")
+plt.xlabel("Duration in minutes")
+plt.xticks(rotation=90)
+plt.grid(True)
+plt.tight_layout()
+plt.savefig("../../reports/figures/rides_per_minute_duration_combined.png")
 plt.show()
