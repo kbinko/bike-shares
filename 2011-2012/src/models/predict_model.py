@@ -7,7 +7,7 @@ import cloudpickle as cp
 
 
 sys.path.append("..")
-from data_preprocessing import process_bike_data
+from data.data_preprocessing import process_bike_data
 from utility import plot_settings
 from utility.visualize import plot_predicted_vs_true, regression_scatter, plot_residuals
 
@@ -15,6 +15,8 @@ from utility.visualize import plot_predicted_vs_true, regression_scatter, plot_r
 # --------------------------------------------------------------
 # Load data
 # --------------------------------------------------------------
+df = pd.read_csv("../../data/raw/daily-bike-share.csv.")
+
 
 process_bike_data(
     "../../data/raw/daily-bike-share.csv",
@@ -34,8 +36,8 @@ with open("../../models/model.pkl", "rb") as f:
 # Make predictions
 # --------------------------------------------------------------
 
-X_new = bike_data.drop("rentals", axis=1)
-y_new = bike_data["rentals"]
+X_new = bike_data.drop("cnt", axis=1)
+y_new = bike_data["cnt"]
 predictions = model.predict(X_new)
 
 # --------------------------------------------------------------

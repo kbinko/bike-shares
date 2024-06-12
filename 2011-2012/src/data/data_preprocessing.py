@@ -11,8 +11,7 @@ https://www.capitalbikeshare.com/system-data
 def process_bike_data(input_path, output_path):
     # Load data
     bike_data = pd.read_csv(input_path)
-    bike_data = bike_data.drop(["registered", "cnt"], axis=1)
-    bike_data.rename(columns={"casual": "rentals"}, inplace=True)
+    bike_data = bike_data.drop(["registered", "casual"], axis=1)
 
     # Select features that are relevant for the analysis
     relevant_features = [
@@ -26,7 +25,7 @@ def process_bike_data(input_path, output_path):
         "atemp",
         "hum",
         "windspeed",
-        "rentals",
+        "cnt",
     ]
     bike_data = bike_data[relevant_features]
 
@@ -55,11 +54,11 @@ def process_bike_data(input_path, output_path):
     )
 
     # Lagged features for rentals
-    bike_data["rentals_lag_1"] = bike_data["rentals"].shift(1)
-    bike_data["rentals_lag_2"] = bike_data["rentals"].shift(2)
+    bike_data["cnt_lag_1"] = bike_data["cnt"].shift(1)
+    bike_data["cnt_lag_2"] = bike_data["cnt"].shift(2)
 
-    # Rolling mean for rentals
-    bike_data["rentals_roll_mean_3"] = bike_data["rentals"].rolling(window=3).mean()
+    # Rolling mean for cnt
+    bike_data["cnt_roll_mean_3"] = bike_data["cnt"].rolling(window=3).mean()
 
     # Drop NaN values from lag features
     bike_data = bike_data.dropna()

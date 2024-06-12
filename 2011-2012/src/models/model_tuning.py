@@ -19,15 +19,21 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import learning_curve
 
 sys.path.append("..")
+from data.data_preprocessing import process_bike_data
 from utility import plot_settings
 from utility.visualize import plot_predicted_vs_true, plot_residuals, regression_scatter
 
 # --------------------------------------------------------------
 # Load data
 # --------------------------------------------------------------
+df = pd.read_csv("../../data/raw/daily-bike-share.csv")
 
+process_bike_data(
+    "../../data/raw/daily-bike-share.csv",
+    "../../data/processed/bike_data_processed.pkl",
+)
 bike_data = pd.read_pickle("../../data/processed/bike_data_processed.pkl")
-target = "rentals"
+target = "cnt"
 
 # --------------------------------------------------------------
 # Train test split
@@ -57,7 +63,6 @@ numeric_transformer = Pipeline(
 )
 
 # Define preprocessing for categorical features (encode them)
-
 categorical_features = X.select_dtypes(include=["category", "object"]).columns
 categorical_transformer = Pipeline(
     steps=[("onehot", OneHotEncoder(handle_unknown="ignore"))]
