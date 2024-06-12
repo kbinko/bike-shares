@@ -322,6 +322,11 @@ seasons_df["season"] = pd.cut(
     ordered=False,
 )
 
+# Adding month and season to the main dataframe
+y2018["month"] = seasons_df["month"]
+y2018["season"] = seasons_df["season"]
+
+
 # Visualizing the number of rides per season
 seasons = seasons_df["season"].value_counts()
 plt.figure(figsize=(18, 8), dpi=120)
@@ -335,7 +340,7 @@ plt.savefig("../../reports/figures/rides_per_season.png", dpi=120)
 plt.show()
 
 # Creating a new dataframe for the number of rides per season and hour
-season_hour = seasons_df.groupby(["hour", "season"]).size()
+season_hour = y2018.groupby(["hour", "season"]).size()
 season_hour = season_hour.reset_index()
 season_hour.columns = ["time", "season", "count"]
 
@@ -370,3 +375,67 @@ plt.xlabel("Hour of the Day", fontsize="x-large")
 plt.tight_layout()
 plt.savefig("../../reports/figures/rides_per_season_hour.png", dpi=120)
 plt.show()
+
+
+# Creating a new dataframe for member type and grouping them by month and hour
+member_type = y2018.groupby(["month", "hour", "Member type"]).size()
+member_type = member_type.reset_index()
+member_type.columns = ["month", "hour", "Member type", "count"]
+
+# Visualizing the number of rides per member type and month
+member_type_month = member_type.groupby(["month", "Member type"])["count"].sum()
+member_type_month = member_type_month.reset_index()
+
+sns.set_theme(rc={"figure.figsize": (14, 10)})
+sns.set_context("paper", font_scale=1.2, rc={"lines.linewidth": 1.7})
+sns.set_style("darkgrid")
+ax = sns.pointplot(
+    data=member_type_month, x="month", y="count", hue="Member type", palette="viridis"
+)
+ax.legend(
+    title="Member Type",
+    title_fontsize="large",
+    fontsize="large",
+    loc="upper right",
+    shadow=True,
+    fancybox=True,
+    frameon=True,
+)
+ax.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
+plt.title("Monthly Distribution of Bike Rentals by Member Type", fontsize="xx-large")
+plt.ylabel("Count of Rides", fontsize="x-large")
+plt.xlabel("Month", fontsize="x-large")
+plt.tight_layout()
+plt.savefig("../../reports/figures/rides_per_month_member_type.png", dpi=120)
+plt.show()
+
+# Visualizing the number of rides per member type and hour
+member_type_hour = member_type.groupby(["hour", "Member type"])["count"].sum()
+member_type_hour = member_type_hour.reset_index()
+sns.set_theme(rc={"figure.figsize": (14, 10)})
+sns.set_context("paper", font_scale=1.2, rc={"lines.linewidth": 1.7})
+sns.set_style("darkgrid")
+ax = sns.pointplot(
+    data=member_type_hour, x="hour", y="count", hue="Member type", palette="viridis"
+)
+ax.legend(
+    title="Member Type",
+    title_fontsize="large",
+    fontsize="large",
+    loc="upper right",
+    shadow=True,
+    fancybox=True,
+    frameon=True,
+)
+ax.grid(True, which="both", linestyle="--", linewidth=0.5, color="gray")
+plt.title("Hourly Distribution of Bike Rentals by Member Type", fontsize="xx-large")
+plt.ylabel("Count of Rides", fontsize="x-large")
+plt.xlabel("Hour", fontsize="x-large")
+plt.tight_layout()
+plt.savefig("../../reports/figures/rides_per_hour_member_type.png", dpi=120)
+plt.show()
+
+y2018_slice = y2018.copy()
+
+y2018_slice = y2018_slice[:100]
+y2018_slice.to_csv("../../data/raw/2018_slice.csv")
