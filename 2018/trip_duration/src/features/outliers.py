@@ -1,51 +1,45 @@
 from scipy import stats
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
-import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Load the data
-file_path = "../../../data/processed/2018_processed.csv"
-df = pd.read_csv(file_path)
 
-
-# List of methods for outlier detection
-def detect_outliers(df):
+def detect_outliers(df, column, sample_size):
     methods = ["Z-Score", "Isolation Forest", "Local Outlier Factor"]
     for method in methods:
         if method == "Z-Score":
             # Calculate Z-scores
-            df["z_score"] = np.abs(stats.zscore(df["Duration"]))
+            df["z_score"] = np.abs(stats.zscore(df[column]))
             threshold = 3
             outliers = df[df["z_score"] > threshold]
             label = "Z-Score"
 
         elif method == "Isolation Forest":
             iso = IsolationForest(contamination=0.01, random_state=42)
-            df["outlier_score"] = iso.fit_predict(df[["Duration"]])
+            df["outlier_score"] = iso.fit_predict(df[[column]])
             outliers = df[df["outlier_score"] == -1]
             label = "Isolation Forest"
 
         elif method == "Local Outlier Factor":
             lof = LocalOutlierFactor(n_neighbors=20, contamination=0.01)
-            df["lof_score"] = lof.fit_predict(df[["Duration"]])
+            df["lof_score"] = lof.fit_predict(df[[column]])
             outliers = df[df["lof_score"] == -1]
             label = "Local Outlier Factor"
 
         # Sample the data for visualization
-        sample_data = df.sample(n=5000, random_state=42)
+        sample_data = df.sample(n=sample_size, random_state=42)
         sample_outliers = (
-            outliers.sample(n=5000, random_state=42)
-            if len(outliers) > 5000
+            outliers.sample(n=sample_size, random_state=42)
+            if len(outliers) > sample_size
             else outliers
         )
 
         # Visualization
-        plt.figure(figsize=(12, 6))
+        plt.figure(figsize=(15, 10), dpi=120)
         plt.scatter(
             sample_data.index,
-            sample_data["Duration"],
+            sample_data[column],
             label="df",
             alpha=0.3,
             s=10,
@@ -53,14 +47,14 @@ def detect_outliers(df):
         )
         plt.scatter(
             sample_outliers.index,
-            sample_outliers["Duration"],
+            sample_outliers[column],
             color="red",
             label="Outliers",
             s=10,
         )
-        plt.title(f"Scatter plot of Duration with {label} Outliers")
+        plt.title(f"Scatter plot of {column} with {label} Outliers")
         plt.xlabel("Index")
-        plt.ylabel("Duration")
+        plt.ylabel(column)
         plt.legend(loc="upper right")
         plt.show()
 
