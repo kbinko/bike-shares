@@ -1,5 +1,4 @@
 import sys
-
 import joblib
 import numpy as np
 import pandas as pd
@@ -14,14 +13,19 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler, PolynomialFeatu
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 from scikeras.wrappers import KerasRegressor
-from tensorflow.keras.regularizers import l2
 import matplotlib.pyplot as plt
 from sklearn.model_selection import learning_curve
 
 sys.path.append("..")
 from data.data_preprocessing import process_bike_data
 from utility import plot_settings
-from utility.visualize import plot_predicted_vs_true, plot_residuals, regression_scatter
+from utility.visualize import (
+    plot_predicted_vs_true,
+    plot_residuals,
+    regression_scatter,
+    plot_learning_curves,
+)
+
 
 # --------------------------------------------------------------
 # Load data
@@ -82,7 +86,8 @@ preprocessor = ColumnTransformer(
 # Training models (XGBoost, Random Forest, Stacking)
 # --------------------------------------------------------------
 
-
+""" 
+Everything below is not needed anymore, i checked everything, NN model is the best in that case 
 # Define the base models
 base_models = [
     ("rf", RandomForestRegressor(n_estimators=100)),
@@ -119,7 +124,7 @@ random_search = RandomizedSearchCV(
 # Fit the model
 best_model = random_search.fit(X_train, y_train)
 
-
+"""
 # --------------------------------------------------------------
 #  Neural Network
 # --------------------------------------------------------------
@@ -166,6 +171,8 @@ pipeline_nn = Pipeline(
 )
 
 # Define the parameter grid for RandomizedSearchCV
+""" 
+I commented out this section since i already did it and saved the best model
 param_grid = {
     "regressor__model__num_neurons": [64, 128, 256],
     "regressor__model__num_layers": [2, 3, 4],
@@ -192,7 +199,7 @@ best_model = random_search.fit(X_train, y_train)
 
 # Get predictions
 predictions_nn = best_model.predict(X_test)
-
+"""
 # best model (saved for the future use to not run the model again)
 # # KerasRegressor(
 # 	model=<function build_keras_model at 0x71ce76139990>
@@ -214,6 +221,8 @@ predictions_nn = best_model.predict(X_test)
 # 	model__num_neurons=256
 # 	model__num_layers=2
 # 	model__dropout_rate=0.2
+
+
 model = pipeline_nn.fit(X_train, y_train)
 predictions_nn = pipeline_nn.predict(X_test)
 
@@ -223,17 +232,17 @@ predictions_nn = pipeline_nn.predict(X_test)
 # --------------------------------------------------------------
 
 # Get predictions
-predictions = best_model.predict(X_test)
+# predictions = best_model.predict(X_test)
 
 predictions_nn = model.predict(X_test)
 
 # Display metrics
-rmse = np.sqrt(mean_squared_error(y_test, predictions))
-r2 = r2_score(y_test, predictions)
+# rmse = np.sqrt(mean_squared_error(y_test, predictions))
+# r2 = r2_score(y_test, predictions)
 
-print("Stacked Model:")
-print(f"RMSE: {rmse}")
-print(f"R^2: {r2}")
+# print("Stacked Model:")
+# print(f"RMSE: {rmse}")
+# print(f"R^2: {r2}")
 
 rmse_nn = np.sqrt(mean_squared_error(y_test, predictions_nn))
 r2_nn = r2_score(y_test, predictions_nn)
@@ -253,49 +262,12 @@ plot_residuals(y_test, predictions_nn, bins=15)
 # Learning curve for NN model
 # --------------------------------------------------------------
 
-
-def plot_learning_curves(model, X, y, cv=3, scoring="neg_mean_squared_error"):
-    train_sizes, train_scores, test_scores = learning_curve(
-        model,
-        X,
-        y,
-        cv=cv,
-        scoring=scoring,
-        n_jobs=-1,
-        train_sizes=np.linspace(0.1, 1.0, 10),
-    )
-    train_scores_mean = -np.mean(train_scores, axis=1)
-    test_scores_mean = -np.mean(test_scores, axis=1)
-
-    plt.figure(figsize=(14, 7))
-    plt.plot(train_sizes, train_scores_mean, "o-", color="r", label="Training score")
-    plt.plot(
-        train_sizes, test_scores_mean, "o-", color="g", label="Cross-validation score"
-    )
-    plt.title("Learning Curves")
-    plt.xlabel("Training examples")
-    plt.ylabel("RMSE")
-    plt.legend(loc="best")
-    plt.grid()
-    plt.show()
-
-
 plot_learning_curves(pipeline_nn, X_train, y_train)
 
 
 # --------------------------------------------------------------
 # Export model
 # --------------------------------------------------------------
-
-
-"""
-In Python, you can use joblib or pickle to serialize (and deserialize) an object structure into (and from) a byte stream. 
-In other words, it's the process of converting a Python object into a byte stream that can be stored in a file.
-
-https://joblib.readthedocs.io/en/latest/generated/joblib.dump.html
-
-"""
-
 ref_cols = list(X.columns)
 
 joblib.dump(value=[pipeline_nn, ref_cols, target], filename="../../models/model.pkl")

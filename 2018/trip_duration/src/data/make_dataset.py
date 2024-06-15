@@ -29,14 +29,13 @@ df["start_season"] = df["Start date"].dt.month % 12 // 3 + 1
 # Convert member type to binary, member = 1, casual = 0
 df["Member type"] = df["Member type"].apply(lambda x: 1 if x == "Member" else 0)
 
-# Droping start/end station names since we have the station ids, bike number is not relevant, also the end station number and end date - since in real-life scenario, when we want to predict the duration of a trip, we won't have this information. We also drop the start date since we have extracted the features from it.
+# Droping start/end station names since we have the station ids, bike number is not relevant, also the end station number and end date - since in real-life scenario, when we want to predict the duration of a trip, we won't have this information.
 df.drop(
     [
         "Start station",
         "End station",
         "Bike number",
         "End station number",
-        "Start date",
         "End date",
     ],
     axis=1,
@@ -45,4 +44,4 @@ df.drop(
 # Changing Duration to minutes, since that's how a price is calculated
 df["Duration"] = df["Duration"] / 60
 
-df.to_pickle("../../../data/processed/2018_processed.pkl")
+df.to_pickle("../../data/processed/2018_processed.pkl")

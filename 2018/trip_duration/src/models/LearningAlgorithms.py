@@ -8,17 +8,22 @@
 ##############################################################
 
 # Updated by Dave Ebbelaar on 12-01-2023
+# Added the regression selection by Konrad Binko on 14.06.2024
 
-from sklearn.neural_network import MLPClassifier
-from sklearn.svm import SVC
-from sklearn.svm import LinearSVC
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier, MLPRegressor
+from sklearn.svm import SVC, LinearSVC, SVR, LinearSVR
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn import tree
 from sklearn.naive_bayes import GaussianNB
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.metrics import (
+    accuracy_score,
+    mean_absolute_error,
+    r2_score,
+    mean_squared_error,
+)
 import pandas as pd
 import numpy as np
 import copy
@@ -467,3 +472,175 @@ class ClassificationAlgorithms:
             frame_prob_training_y,
             frame_prob_test_y,
         )
+
+
+# Function to evaluate different regression models
+def evaluate_regression_models(
+    df,
+    target_column,
+    models_to_evaluate=None,
+    test_size=0.2,
+    random_state=42,
+):
+    # Default models to evaluate if none are provided
+    if models_to_evaluate is None:
+        models_to_evaluate = [
+            "RandomForest",
+            "NeuralNetwork",
+            "SVR",
+            "LinearSVR",
+            "KNN",
+            "DecisionTree",
+        ]
+
+    # Split the data into features and target variable
+    X = df.drop(target_column, axis=1)
+    y = df[target_column]
+
+    # Split the data into training and validation sets
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+
+    # Define the models to evaluate
+    models = {
+        "RandomForest": RandomForestRegressor(random_state=random_state),
+        "NeuralNetwork": MLPRegressor(random_state=random_state),
+        "SVR": SVR(),
+        "LinearSVR": LinearSVR(random_state=random_state),
+        "KNN": KNeighborsRegressor(),
+        "DecisionTree": DecisionTreeRegressor(random_state=random_state),
+    }
+
+    # Grid search parameters for each model
+    param_grids = {
+        "RandomForest": {"n_estimators": [100, 200], "min_samples_leaf": [1, 2, 4]},
+        "NeuralNetwork": {
+            "hidden_layer_sizes": [(50,), (100,)],
+            "max_iter": [1000, 2000],
+        },
+        "SVR": {"C": [0.1, 1, 10], "gamma": ["scale", "auto"]},
+        "LinearSVR": {"C": [0.1, 1, 10], "max_iter": [1000, 2000]},
+        "KNN": {"n_neighbors": [3, 5, 7]},
+        "DecisionTree": {
+            "min_samples_leaf": [1, 2, 4],
+            "criterion": ["absolute_error", "poisson", "squared_error", "friedman_mse"],
+            "splitter": ["best", "random"],
+            "max_depth": [None, 10, 20],
+        },
+    }
+
+    # DataFrame to store the results
+    results = pd.DataFrame(columns=["Model", "MAE", "MSE", "R^2"])
+
+    # Variable to store the best model and its performance
+    best_model = None
+    best_mae = float("inf")
+
+    # Evaluate each model
+    for model_name in models_to_evaluate:
+        model = models[model_name]
+        print(f"Evaluating {model_name}...")
+
+        # Perform grid search for hyperparameter tuning
+        grid_search = GridSearchCV(
+            model, param_grids[model_name], cv=5, scoring="neg_mean_absolute_error"
+        )
+        grid_search.fit(X_train, y_train)
+
+        # Get the best model from grid search
+        best_model_for_current = grid_search.best_estimator_
+
+        # Predict on validation set
+        y_pred = best_model_for_current.predict(X_val)
+
+        # Calculate performance metrics
+        mae = mean_absolute_error(y_val, y_pred)
+        mse = mean_squared_error(y_val, y_pred)
+        r2 = r2_score(y_val, y_pred)
+
+        # Print the performance of the current model
+        print(f"{model_name} Performance:")
+        print(f"Mean Absolute Error (MAE): {mae}")
+        print(f"Mean Squared Error (MSE): {mse}")
+        print(f"R^2 Score: {r2}\n")
+
+        # Append the results to the DataFrame
+        result_row = pd.DataFrame(
+            {"Model": [model_name], "MAE": [mae], "MSE": [mse], "R^2": [r2]}
+        )
+        results = pd.concat([results, result_row], ignore_index=True)
+        # Check if this model is the best so far
+        if mae < best_mae:
+            best_mae = mae
+            best_model = best_model_for_current
+
+    return results, best_model
+
+
+def evaluate_feature_sets(
+    df, target_column, feature_sets, test_size=0.2, random_state=42
+):
+    results = pd.DataFrame(columns=["Feature Set", "MAE", "MSE", "R^2"])
+    best_mae = float("inf")
+    best_feature_set = None
+    best_model = None
+
+    # Define the Neural Network model
+    nn_model = MLPRegressor(random_state=random_state)
+
+    # Grid search parameters for Neural Network
+    param_grid = {
+        "hidden_layer_sizes": [(50,), (100,)],
+        "max_iter": [1000, 2000],
+        "activation": ["relu", "tanh"],
+        "alpha": [0.0001, 0.001],
+    }
+
+    for i, feature_set in enumerate(feature_sets):
+        print(f"Evaluating feature set {i + 1}: {feature_set}")
+
+        # Split the data into features and target variable
+        X = df[feature_set]
+        y = df[target_column]
+
+        # Split the data into training and validation sets
+        X_train, X_val, y_train, y_val = train_test_split(
+            X, y, test_size=test_size, random_state=random_state
+        )
+
+        # Perform grid search for hyperparameter tuning
+        grid_search = GridSearchCV(
+            nn_model, param_grid, cv=5, scoring="neg_mean_absolute_error"
+        )
+        grid_search.fit(X_train, y_train)
+
+        # Get the best model from grid search
+        best_nn_model = grid_search.best_estimator_
+
+        # Predict on validation set
+        y_pred = best_nn_model.predict(X_val)
+
+        # Calculate performance metrics
+        mae = mean_absolute_error(y_val, y_pred)
+        mse = mean_squared_error(y_val, y_pred)
+        r2 = r2_score(y_val, y_pred)
+
+        # Print the performance of the current feature set
+        print(f"Feature Set {i + 1} Performance:")
+        print(f"Mean Absolute Error (MAE): {mae}")
+        print(f"Mean Squared Error (MSE): {mse}")
+        print(f"R^2 Score: {r2}\n")
+
+        # Append the results to the DataFrame
+        results = results.append(
+            {"Feature Set": i + 1, "MAE": mae, "MSE": mse, "R^2": r2}, ignore_index=True
+        )
+
+        # Check if this feature set is the best so far
+        if mae < best_mae:
+            best_mae = mae
+            best_feature_set = feature_set
+            best_model = best_nn_model
+
+    return results, best_feature_set, best_model

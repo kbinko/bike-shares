@@ -1,12 +1,12 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures
-from feature_evaluation import target_encode, select_important_features
+from feature_evaluation import target_encode
 from sklearn.ensemble import IsolationForest
 from sklearn.decomposition import PCA
 from outliers import detect_outliers
 
 # Load the data
-file_path = "../../../data/processed/2018_processed.pkl"
+file_path = "../../data/processed/2018_processed.pkl"
 df = pd.read_pickle(file_path)
 
 # Sampling the data
@@ -158,17 +158,17 @@ detect_outliers(df, "Duration", df.shape[0])
 
 # Using Isolation Forest to detect outliers
 iso = IsolationForest(contamination=0.01, random_state=42)
-df["outlier_score"] = iso.fit_predict(df[["Duration"]])
-outliers = df[df["outlier_score"] == -1]
+df_outliers = df.copy()
+df_outliers["outlier_score"] = iso.fit_predict(df_outliers[["Duration"]])
+outliers = df_outliers[df_outliers["outlier_score"] == -1]
 
 # Removing the outliers and exporting the dataset
-df_outliers_removed = df.copy()
-df_outliers_removed.drop(outliers.index, inplace=True)
-df_outliers_removed.to_pickle("../../../data/processed/2018_processed_outliers.pkl")
+df_outliers.drop(outliers.index, inplace=True)
+df_outliers.drop(["outlier_score", "lof_score"], axis=1, inplace=True)
+df_outliers.to_pickle("../../data/features/2018_features_outliers.pkl")
 
 # -------------------------------------
-# Selecting the most important features
+# Exporting the dataset
 # -------------------------------------
-# Sampling the data to speed up the feature selection process
-# df = df.sample(frac=0.1, random_state=42)
-df["Duration"].min()
+df.drop(["outlier_score", "lof_score"], axis=1, inplace=True)
+df.to_pickle("../../data/features/2018_features.pkl")
