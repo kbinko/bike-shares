@@ -4,7 +4,7 @@
 
 * [Project Introduction](https://github.com/kbinko/bike-shares/edit/main/README.md#project-introduction)
 * [2011-2012 shares count model prediction](https://github.com/kbinko/bike-shares/edit/main/README.md#2011-2012-shares-count-model-prediction)
-* [2018 exploratory analysis and model building]
+* [2018 exploratory analysis and model building](https://github.com/kbinko/bike-shares/edit/main/README.md#2018-exploratory-analysis-and-model-building)
 
 ## Project Introduction
 
